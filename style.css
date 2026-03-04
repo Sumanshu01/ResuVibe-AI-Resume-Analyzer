@@ -664,6 +664,54 @@ footer {
     line-height: 1.5;
 }
 
+/* Export Buttons */
+.export-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    width: 100%;
+}
+
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    padding: 0.7rem 1.2rem;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-export-pdf {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+}
+
+.btn-export-pdf:hover {
+    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.45);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.btn-export-text {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-export-text:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
 /* Back to Home Button */
 .btn-back-home {
     font-family: var(--font-sans);

@@ -332,3 +332,331 @@ setInterval(() => {
         showTip(state.currentTipIndex + 1);
     }
 }, 5000);
+
+// --- Export Functions --- //
+
+function getScoreLabel(score) {
+    if (score >= 85) return 'Exceptional Vibe!';
+    if (score >= 70) return 'Solid Resume';
+    if (score >= 50) return 'Needs Work';
+    return 'Significant Improvements Needed';
+}
+
+function generateReportDate() {
+    return new Date().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
+
+// --- PDF Report --- //
+function exportPDFReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 18;
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    // Color palette
+    const colors = {
+        dark: [15, 23, 42],
+        primary: [139, 92, 246],
+        secondary: [236, 72, 153],
+        accent: [6, 182, 212],
+        success: [16, 185, 129],
+        warning: [245, 158, 11],
+        danger: [239, 68, 68],
+        textLight: [248, 250, 252],
+        textMuted: [148, 163, 184],
+        cardBg: [30, 41, 59]
+    };
+
+    // -- Page background --
+    doc.setFillColor(...colors.dark);
+    doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+
+    // -- Header accent bar --
+    const grad1 = colors.primary;
+    const grad2 = colors.secondary;
+    doc.setFillColor(...grad1);
+    doc.rect(0, 0, pageWidth, 4, 'F');
+    doc.setFillColor(...grad2);
+    doc.rect(pageWidth / 2, 0, pageWidth / 2, 4, 'F');
+
+    y = 16;
+
+    // -- Title --
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.setTextColor(...colors.textLight);
+    doc.text('ResuVibe', margin, y);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.accent);
+    doc.text('AI Resume Analysis Report', margin + 48, y);
+
+    y += 6;
+    doc.setDrawColor(...colors.primary);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    // -- Date --
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.textMuted);
+    doc.text('Generated: ' + generateReportDate(), margin, y);
+    y += 10;
+
+    // -- Score Section --
+    // Card background
+    doc.setFillColor(...colors.cardBg);
+    doc.roundedRect(margin, y, contentWidth, 44, 4, 4, 'F');
+
+    // Score circle (simplified)
+    const circleCenterX = margin + 24;
+    const circleCenterY = y + 22;
+    const circleR = 16;
+
+    // Outer ring
+    doc.setDrawColor(60, 70, 90);
+    doc.setLineWidth(3);
+    doc.circle(circleCenterX, circleCenterY, circleR, 'S');
+
+    // Score color
+    let scoreColor = colors.danger;
+    if (state.score >= 85) scoreColor = colors.success;
+    else if (state.score >= 70) scoreColor = colors.primary;
+    else if (state.score >= 50) scoreColor = colors.warning;
+
+    doc.setDrawColor(...scoreColor);
+    doc.setLineWidth(3);
+    // Draw partial arc via a thick colored ring
+    const arcAngle = (state.score / 100) * 360;
+    // Simplified: draw full colored circle for high scores, partial segments
+    const segments = Math.floor(arcAngle / 6);
+    for (let i = 0; i < segments; i++) {
+        const angle = (-90 + i * 6) * (Math.PI / 180);
+        const x1 = circleCenterX + circleR * Math.cos(angle);
+        const y1 = circleCenterY + circleR * Math.sin(angle);
+        const angle2 = (-90 + (i + 1) * 6) * (Math.PI / 180);
+        const x2 = circleCenterX + circleR * Math.cos(angle2);
+        const y2 = circleCenterY + circleR * Math.sin(angle2);
+        doc.line(x1, y1, x2, y2);
+    }
+
+    // Score number
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(...scoreColor);
+    const scoreStr = String(state.score);
+    doc.text(scoreStr, circleCenterX - doc.getTextWidth(scoreStr) / 2, circleCenterY + 3);
+
+    doc.setFontSize(8);
+    doc.setTextColor(...colors.textMuted);
+    doc.text('/100', circleCenterX + doc.getTextWidth(scoreStr) / 2 + 1, circleCenterY + 3);
+
+    // Score label
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...colors.textLight);
+    doc.text('Overall Resume Vibe', margin + 50, y + 14);
+
+    doc.setFontSize(11);
+    doc.setTextColor(...scoreColor);
+    doc.text(getScoreLabel(state.score), margin + 50, y + 22);
+
+    // Rating bar
+    const barX = margin + 50;
+    const barY = y + 28;
+    const barW = contentWidth - 58;
+    const barH = 5;
+    doc.setFillColor(60, 70, 90);
+    doc.roundedRect(barX, barY, barW, barH, 2, 2, 'F');
+    doc.setFillColor(...scoreColor);
+    doc.roundedRect(barX, barY, barW * (state.score / 100), barH, 2, 2, 'F');
+
+    // Score fraction text
+    doc.setFontSize(8);
+    doc.setTextColor(...colors.textMuted);
+    doc.text(state.score + ' out of 100 points', barX, barY + 10);
+
+    y += 52;
+
+    // -- Criteria Breakdown Section --
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...colors.textLight);
+    doc.text('Detailed Breakdown', margin, y);
+    y += 3;
+    doc.setDrawColor(...colors.accent);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, margin + 44, y);
+    y += 6;
+
+    state.criteriaScores.forEach((c, i) => {
+        // Check for page overflow
+        if (y > 260) {
+            doc.addPage();
+            doc.setFillColor(...colors.dark);
+            doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+            y = margin;
+        }
+
+        // Row background
+        const rowColor = i % 2 === 0 ? [25, 35, 52] : [20, 30, 46];
+        doc.setFillColor(...rowColor);
+        doc.roundedRect(margin, y, contentWidth, 14, 3, 3, 'F');
+
+        // Left color indicator
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [139, 92, 246];
+        };
+        const criterionColor = hexToRgb(c.color);
+        doc.setFillColor(...criterionColor);
+        doc.roundedRect(margin, y, 3, 14, 1.5, 1.5, 'F');
+
+        // Criterion name
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...colors.textLight);
+        doc.text(c.name, margin + 7, y + 6);
+
+        // Description
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...colors.textMuted);
+        doc.text(c.desc, margin + 7, y + 11);
+
+        // Score badge
+        const badgeW = 18;
+        const badgeX = pageWidth - margin - badgeW;
+        doc.setFillColor(40, 50, 70);
+        doc.roundedRect(badgeX, y + 2.5, badgeW, 9, 4, 4, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...criterionColor);
+        const badgeText = c.score + '/10';
+        doc.text(badgeText, badgeX + badgeW / 2 - doc.getTextWidth(badgeText) / 2, y + 8.5);
+
+        y += 17;
+    });
+
+    y += 6;
+
+    // -- Improvement Tips --
+    if (y > 240) {
+        doc.addPage();
+        doc.setFillColor(...colors.dark);
+        doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+        y = margin;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...colors.accent);
+    doc.text('💡 Quick Improvement Tips', margin, y);
+    y += 8;
+
+    const improvementTips = [];
+    state.criteriaScores.forEach(c => {
+        if (c.score < 7) {
+            improvementTips.push({ area: c.name, tip: 'Improve your ' + c.name.toLowerCase() + ' — ' + c.desc });
+        }
+    });
+
+    if (improvementTips.length === 0) {
+        improvementTips.push({ area: 'Great work!', tip: 'Your resume scored well across all criteria. Keep refining and tailoring for each role.' });
+    }
+
+    improvementTips.forEach((tip, i) => {
+        if (y > 270) {
+            doc.addPage();
+            doc.setFillColor(...colors.dark);
+            doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+            y = margin;
+        }
+
+        doc.setFillColor(...colors.cardBg);
+        doc.roundedRect(margin, y, contentWidth, 12, 3, 3, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...colors.warning);
+        doc.text((i + 1) + '. ' + tip.area, margin + 5, y + 5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...colors.textMuted);
+        const tipLines = doc.splitTextToSize(tip.tip, contentWidth - 12);
+        doc.text(tipLines[0], margin + 5, y + 9.5);
+
+        y += 15;
+    });
+
+    // -- Footer --
+    const footerY = doc.internal.pageSize.getHeight() - 10;
+    doc.setDrawColor(40, 50, 70);
+    doc.setLineWidth(0.3);
+    doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...colors.textMuted);
+    doc.text('ResuVibe — AI Resume Analyzer | resuvibe.app', margin, footerY);
+    doc.text('Developed by Sumanshu Jindal', pageWidth - margin - doc.getTextWidth('Developed by Sumanshu Jindal'), footerY);
+
+    // Save
+    doc.save('ResuVibe_Report_' + state.score + '.pdf');
+}
+
+// --- Text Report Export --- //
+function exportTextReport() {
+    let report = '';
+    report += '═══════════════════════════════════════════\n';
+    report += '          RESUVIBE — RESUME ANALYSIS REPORT\n';
+    report += '═══════════════════════════════════════════\n\n';
+    report += 'Generated: ' + generateReportDate() + '\n\n';
+
+    report += '┌─────────────────────────────────────┐\n';
+    report += '│  OVERALL SCORE: ' + state.score + '/100';
+    report += ' '.repeat(Math.max(0, 20 - String(state.score).length - 4)) + '│\n';
+    report += '│  Verdict: ' + getScoreLabel(state.score);
+    report += ' '.repeat(Math.max(0, 26 - getScoreLabel(state.score).length)) + '│\n';
+    report += '└─────────────────────────────────────┘\n\n';
+
+    report += '─── DETAILED BREAKDOWN ────────────────\n\n';
+
+    state.criteriaScores.forEach((c, i) => {
+        const bar = '█'.repeat(c.score) + '░'.repeat(10 - c.score);
+        report += `  ${(i + 1).toString().padStart(2, '0')}. ${c.name}\n`;
+        report += `      Score: [${bar}] ${c.score}/10\n`;
+        report += `      ${c.desc}\n\n`;
+    });
+
+    report += '─── IMPROVEMENT TIPS ──────────────────\n\n';
+    let tipCount = 0;
+    state.criteriaScores.forEach(c => {
+        if (c.score < 7) {
+            tipCount++;
+            report += `  ★ ${c.name}: Improve your ${c.name.toLowerCase()} — ${c.desc}\n`;
+        }
+    });
+    if (tipCount === 0) {
+        report += '  ★ Great job! Your resume scored well across all criteria.\n';
+    }
+
+    report += '\n═══════════════════════════════════════════\n';
+    report += '  ResuVibe — AI Resume Analyzer\n';
+    report += '  Developed by Sumanshu Jindal\n';
+    report += '═══════════════════════════════════════════\n';
+
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ResuVibe_Report_' + state.score + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}

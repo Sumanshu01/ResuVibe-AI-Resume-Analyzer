@@ -21,6 +21,9 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
+    <!-- jsPDF for PDF Report Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -135,6 +138,14 @@
                     </div>
                     <p id="score-message" class="score-message">Great start!</p>
                     <button class="btn btn-secondary" onclick="resetApp()">Analyze Another</button>
+                    <div class="export-actions">
+                        <button class="btn btn-export btn-export-pdf" id="export-pdf-btn" onclick="exportPDFReport()">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                        </button>
+                        <button class="btn btn-export btn-export-text" id="export-text-btn" onclick="exportTextReport()">
+                            <i class="fa-solid fa-file-lines"></i> Export as Text
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Analysis Breakdown -->
